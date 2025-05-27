@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { faker } from "@faker-js/faker";
 
 function createRandomPost() {
@@ -28,9 +36,9 @@ function App() {
         )
       : posts;
 
-  function handleAddPost(post) {
+  const handleAddPost = useCallback(function handleAddPost(post) {
     setPosts((posts) => [post, ...posts]);
-  }
+  }, []);
 
   function handleClearPosts() {
     setPosts([]);
@@ -44,17 +52,19 @@ function App() {
     [isFakeDark]
   );
 
+  const value = useMemo(() => {
+    return {
+      posts: searchedPosts,
+      onAddPost: handleAddPost,
+      onClearPosts: handleClearPosts,
+      searchQuery,
+      setSearchQuery,
+    };
+  }, [searchedPosts, searchQuery, handleAddPost]);
+
   return (
     // Provide value to Child Component
-    <PostContext.Provider
-      value={{
-        posts: searchedPosts,
-        onAddPost: handleAddPost,
-        onClearPosts: handleClearPosts,
-        searchQuery,
-        setSearchQuery,
-      }}
-    >
+    <PostContext.Provider value={value}>
       <section>
         <button
           onClick={() => setIsFakeDark((isFakeDark) => !isFakeDark)}
@@ -169,7 +179,7 @@ function List() {
   );
 }
 
-function Archive() {
+const Archive = memo(function Archive() {
   const { onAddPost } = useContext(PostContext);
   // Here we don't need the setter function. We're only using state to store these posts because the callback function passed into useState (which generates the posts) is only called once, on the initial render. So we use this trick as an optimization technique, because if we just used a regular variable, these posts would be re-created on every render. We could also move the posts outside the components, but I wanted to show you this trick 😉
   const [posts] = useState(() =>
@@ -200,7 +210,7 @@ function Archive() {
       )}
     </aside>
   );
-}
+});
 
 function Footer() {
   return <footer>&copy; by The Atomic Blog ✌️</footer>;
@@ -209,3 +219,5 @@ function Footer() {
 export default App;
 
 // Basic way of writing context
+
+// here i have included the concept of optimization like useMemo, useCallback and memo -- this concept use when we have sluggish ui (slow) like in case of Archive component it making search filtration. as it is having 1000 of posts
